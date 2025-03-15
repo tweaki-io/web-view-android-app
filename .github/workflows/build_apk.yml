@@ -1,5 +1,6 @@
 name: Build WebView APK
 
+# Trigger the workflow via a repository dispatch event with type "apk_build"
 on:
   repository_dispatch:
     types: [apk_build]
@@ -7,31 +8,41 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
+      # Step 1: Checkout the repository code
       - name: Checkout Repository
         uses: actions/checkout@v3
 
+      # Step 2: Set up JDK 17 (Temurin distribution)
       - name: Set Up Java
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '17'
 
+      # Step 3: Set up Android SDK tools
       - name: Set Up Android SDK
         uses: android-actions/setup-android@v2
 
+      # Step 4: Modify the WebView URL in MainActivity.java
       - name: Modify WebView URL
         run: |
-          echo "Updating WebView URL..."
-          sed -i 's|https://defaulturl.com|'${{ github.event.client_payload.url }}'|g' app/src/main/java/com/example/webviewapp/MainActivity.java
+          echo "Updating WebView URL to ${{ github.event.client_payload.url }}"
+          sed -i "s|https://defaulturl.com|${{ github.event.client_payload.url }}|g" app/src/main/java/com/example/webviewapp/MainActivity.java
 
+      # Step 5: Grant execute permission to the Gradle wrapper
+      - name: Grant Execute Permission to Gradle
+        run: chmod +x gradlew
+
+      # Step 6: Build the APK (debug variant)
       - name: Build APK
-        run: |
-          chmod +x gradlew
-          ./gradlew assembleDebug
+        run: ./gradlew assembleDebug
 
+      # Step 7: Upload the generated APK as an artifact
       - name: Upload APK
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: webview-apk
           path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7
