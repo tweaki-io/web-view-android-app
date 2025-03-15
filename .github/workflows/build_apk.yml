@@ -25,13 +25,15 @@ jobs:
           echo "Updating WebView URL..."
           sed -i 's|https://defaulturl.com|'${{ github.event.client_payload.url }}'|g' app/src/main/java/com/example/webviewapp/MainActivity.java
 
+      - name: Grant Execute Permission to Gradle
+        run: chmod +x gradlew
+
       - name: Build APK
-        run: |
-          chmod +x gradlew
-          ./gradlew assembleDebug
+        run: ./gradlew assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v3
         with:
           name: webview-apk
           path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7
